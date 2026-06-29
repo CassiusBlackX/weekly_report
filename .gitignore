@@ -1,0 +1,29 @@
+# Secrets — never commit real credentials
+.env
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node / frontend build output
+node_modules/
+frontend/dist/
+backend/frontend_dist/
+
+# Runtime data & backups
+backend/data/
+data/
+backups/
+*.db
+*.db-wal
+*.db-shm
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp

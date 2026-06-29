@@ -1,0 +1,42 @@
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+/* Shared styling for editor input and rendered report content. */
+.tiptap-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  margin: 6px 0;
+}
+
+.tiptap-content p {
+  margin: 4px 0;
+}
+
+.tiptap-content ul,
+.tiptap-content ol {
+  padding-left: 22px;
+}
+
+.tiptap-content .ProseMirror {
+  outline: none;
+  min-height: 200px;
+}
+
+.tiptap-content blockquote {
+  border-left: 3px solid #d9d9d9;
+  margin: 6px 0;
+  padding-left: 12px;
+  color: #666;
+}
+
+.tiptap-content pre {
+  background: #f5f5f5;
+  padding: 10px 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+}

@@ -1,0 +1,26 @@
+# systemd Quadlet unit for rootless auto-start (Podman 4.4+).
+# Install (rootless):
+#   cp weekly-report.container ~/.config/containers/systemd/
+#   # build the image first:  podman build -t localhost/weekly-report:latest .
+#   # provide secrets via an env file readable by your user, e.g. ~/.config/weekly-report.env
+#   systemctl --user daemon-reload
+#   systemctl --user start weekly-report.service
+#   loginctl enable-linger "$USER"   # keep it running after logout / on boot
+
+[Unit]
+Description=Weekly Report System
+After=network-online.target
+
+[Container]
+Image=localhost/weekly-report:latest
+ContainerName=weekly-report
+PublishPort=127.0.0.1:8080:8080
+Volume=weekly_data:/data
+EnvironmentFile=%h/.config/weekly-report.env
+Environment=TZ=Asia/Shanghai
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target
