@@ -27,3 +27,7 @@ backups/
 .idea/
 .vscode/
 *.swp
+
+# Saved container image archives (transfer artifacts, never commit)
+*.tar
+*.tar.gz

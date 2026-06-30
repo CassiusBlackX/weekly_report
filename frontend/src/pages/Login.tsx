@@ -30,10 +30,11 @@ export default function Login() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        padding: 16,
         background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
       }}
     >
-      <Card style={{ width: 380, borderRadius: 16, boxShadow: "0 12px 40px rgba(0,0,0,0.2)" }}>
+      <Card style={{ width: "100%", maxWidth: 380, borderRadius: 16, boxShadow: "0 12px 40px rgba(0,0,0,0.2)" }}>
         <Typography.Title level={3} style={{ textAlign: "center" }}>
           实验室周报系统
         </Typography.Title>

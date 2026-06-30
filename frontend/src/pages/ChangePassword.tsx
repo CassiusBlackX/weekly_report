@@ -15,15 +15,15 @@ export default function ChangePassword() {
   };
 
   return (
-    <Card title="修改密码" style={{ maxWidth: 420 }}>
+    <Card title="修改密码" style={{ width: "100%", maxWidth: 420 }}>
       <Form form={form} layout="vertical" onFinish={onFinish}>
         <Form.Item name="old_password" label="原密码" rules={[{ required: true }]}>
-          <Input.Password />
+          <Input.Password size="large" />
         </Form.Item>
         <Form.Item name="new_password" label="新密码" rules={[{ required: true, min: 6, message: "至少 6 位" }]}>
-          <Input.Password />
+          <Input.Password size="large" />
         </Form.Item>
-        <Button type="primary" htmlType="submit">
+        <Button type="primary" htmlType="submit" size="large" block>
           保存
         </Button>
       </Form>

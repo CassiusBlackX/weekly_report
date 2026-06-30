@@ -32,9 +32,18 @@ def reports_by_cycle(
     _: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """All active users alongside their report (or null) for this cycle."""
+    """All active reporting users alongside their report (or null) for this cycle.
+
+    Admins are managers only and do not write reports, so they are excluded
+    from the listing.
+    """
     _get_cycle_or_404(db, cycle_id)
-    users = db.query(User).filter(User.is_active.is_(True)).order_by(User.display_name).all()
+    users = (
+        db.query(User)
+        .filter(User.is_active.is_(True), User.role == "user")
+        .order_by(User.display_name)
+        .all()
+    )
     reports = {
         r.user_id: r
         for r in db.query(Report).filter(Report.cycle_id == cycle_id).all()
@@ -58,6 +67,9 @@ def save_my_report(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if user.is_admin:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "管理员无需填写周报")
+
     cycle = _get_cycle_or_404(db, cycle_id)
 
     current_label, _s, _e = current_week_bounds()

@@ -3,7 +3,8 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
-import { Button, Space, Tooltip, message } from "antd";
+import Placeholder from "@tiptap/extension-placeholder";
+import { Button, Space, Tooltip, Grid, message } from "antd";
 import {
   BoldOutlined,
   ItalicOutlined,
@@ -15,6 +16,8 @@ import {
 } from "@ant-design/icons";
 import { api } from "../api";
 
+const { useBreakpoint } = Grid;
+
 interface Props {
   initialContent: string; // TipTap JSON string, or empty
   onChange: (json: string, html: string) => void;
@@ -22,12 +25,15 @@ interface Props {
 
 export default function RichTextEditor({ initialContent, onChange }: Props) {
   const fileInput = useRef<HTMLInputElement>(null);
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
 
   const editor = useEditor({
     extensions: [
       StarterKit,
       Image.configure({ inline: false }),
       Link.configure({ openOnClick: false }),
+      Placeholder.configure({ placeholder: "在这里填写本周工作内容，可插入图片…" }),
     ],
     content: initialContent ? safeParse(initialContent) : "",
     onUpdate: ({ editor }) => {
@@ -46,6 +52,7 @@ export default function RichTextEditor({ initialContent, onChange }: Props) {
   if (!editor) return null;
 
   const uploadImage = async (file: File) => {
+    const hide = message.loading("图片上传中…", 0);
     const form = new FormData();
     form.append("file", file);
     try {
@@ -55,6 +62,8 @@ export default function RichTextEditor({ initialContent, onChange }: Props) {
       editor.chain().focus().setImage({ src: data.url }).run();
     } catch (e: any) {
       message.error(e?.response?.data?.detail || "图片上传失败");
+    } finally {
+      hide();
     }
   };
 
@@ -63,15 +72,21 @@ export default function RichTextEditor({ initialContent, onChange }: Props) {
     if (url) editor.chain().focus().setLink({ href: url }).run();
   };
 
+  const btnSize = isMobile ? "middle" : "small";
   const btn = (active: boolean, icon: JSX.Element, onClick: () => void, tip: string) => (
     <Tooltip title={tip}>
-      <Button size="small" type={active ? "primary" : "default"} icon={icon} onClick={onClick} />
+      <Button size={btnSize} type={active ? "primary" : "default"} icon={icon} onClick={onClick} />
     </Tooltip>
   );
 
   return (
-    <div style={{ border: "1px solid #d9d9d9", borderRadius: 8, overflow: "hidden" }}>
-      <Space style={{ padding: 8, borderBottom: "1px solid #f0f0f0", background: "#fafafa" }} wrap>
+    <div style={{ border: "1px solid #d9d9d9", borderRadius: 10, overflow: "hidden" }}>
+      <Space
+        className="editor-toolbar"
+        size={isMobile ? 8 : 4}
+        style={{ padding: isMobile ? 10 : 8, borderBottom: "1px solid #f0f0f0", background: "#fafafa", rowGap: 8 }}
+        wrap
+      >
         {btn(editor.isActive("bold"), <BoldOutlined />, () => editor.chain().focus().toggleBold().run(), "加粗")}
         {btn(editor.isActive("italic"), <ItalicOutlined />, () => editor.chain().focus().toggleItalic().run(), "斜体")}
         {btn(editor.isActive("strike"), <StrikethroughOutlined />, () => editor.chain().focus().toggleStrike().run(), "删除线")}
@@ -91,7 +106,16 @@ export default function RichTextEditor({ initialContent, onChange }: Props) {
           e.target.value = "";
         }}
       />
-      <EditorContent editor={editor} className="tiptap-content" style={{ padding: 12, minHeight: 220 }} />
+      <EditorContent
+        editor={editor}
+        className="tiptap-content"
+        style={{
+          padding: 14,
+          minHeight: isMobile ? 200 : 240,
+          maxHeight: isMobile ? "52vh" : "none",
+          overflowY: "auto",
+        }}
+      />
     </div>
   );
 }

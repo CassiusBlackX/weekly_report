@@ -4,6 +4,7 @@ import {
   Button,
   Card,
   Empty,
+  Grid,
   Modal,
   Popconfirm,
   Select,
@@ -18,8 +19,13 @@ import { useAuth } from "../auth";
 import RichTextEditor from "../components/RichTextEditor";
 import RichTextViewer from "../components/RichTextViewer";
 
+const { useBreakpoint } = Grid;
+
 export default function Reports() {
   const { user } = useAuth();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
+
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [currentLabel, setCurrentLabel] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -33,8 +39,9 @@ export default function Reports() {
 
   const selected = useMemo(() => cycles.find((c) => c.id === selectedId) || null, [cycles, selectedId]);
   const isCurrentWeek = selected?.week_label === currentLabel;
+  const isReportingUser = user?.role === "user"; // admins manage only, never write reports
   // Own report editable: past weeks always; current week only when opened.
-  const canEditOwn = selected ? (!isCurrentWeek || selected.is_open) : false;
+  const canEditOwn = isReportingUser && selected ? (!isCurrentWeek || selected.is_open) : false;
 
   const loadCycles = async () => {
     const [cyclesRes, currentRes] = await Promise.all([
@@ -117,11 +124,22 @@ export default function Reports() {
 
   return (
     <div>
-      <Space style={{ marginBottom: 16, width: "100%", justifyContent: "space-between" }} wrap>
-        <Space wrap>
-          <Typography.Text strong>选择周次：</Typography.Text>
+      {/* Control bar: stacks vertically on phones, inline on desktop. */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          alignItems: isMobile ? "stretch" : "center",
+          justifyContent: "space-between",
+          gap: 12,
+          marginBottom: 16,
+        }}
+      >
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+          {!isMobile && <Typography.Text strong>选择周次：</Typography.Text>}
           <Select
-            style={{ width: 280 }}
+            style={{ width: isMobile ? "100%" : 280, minWidth: isMobile ? "100%" : 280 }}
+            size={isMobile ? "large" : "middle"}
             value={selectedId ?? undefined}
             onChange={setSelectedId}
             placeholder="暂无周报周次"
@@ -130,28 +148,30 @@ export default function Reports() {
               label: `${c.week_label}（${c.start_date} ~ ${c.end_date}）${c.is_open ? "" : " · 已关闭"}`,
             }))}
           />
-          {selected && (
-            <Tag color={selected.is_open ? "green" : "default"}>{selected.is_open ? "填报中" : "已关闭"}</Tag>
-          )}
-          {isCurrentWeek && <Tag color="blue">本周</Tag>}
-        </Space>
-        {user?.role === "admin" && (
           <Space>
+            {selected && (
+              <Tag color={selected.is_open ? "green" : "default"}>{selected.is_open ? "填报中" : "已关闭"}</Tag>
+            )}
+            {isCurrentWeek && <Tag color="blue">本周</Tag>}
+          </Space>
+        </div>
+        {user?.role === "admin" && (
+          <div>
             {!currentWeekOpened ? (
-              <Button type="primary" icon={<PlayCircleOutlined />} onClick={openCurrentWeek}>
+              <Button type="primary" icon={<PlayCircleOutlined />} onClick={openCurrentWeek} block={isMobile}>
                 开启本周填报
               </Button>
             ) : (
               isCurrentWeek &&
               selected?.is_open && (
-                <Button icon={<PauseCircleOutlined />} onClick={closeWeek}>
+                <Button icon={<PauseCircleOutlined />} onClick={closeWeek} block={isMobile}>
                   关闭本周填报
                 </Button>
               )
             )}
-          </Space>
+          </div>
         )}
-      </Space>
+      </div>
 
       {!currentWeekOpened && (
         <Alert
@@ -161,27 +181,39 @@ export default function Reports() {
           message="本周填报尚未开启"
           description={
             user?.role === "admin"
-              ? "点击右上角“开启本周填报”后，成员即可填写本周周报；当前你仍可编辑自己的往期周报。"
+              ? "点击“开启本周填报”后，成员即可填写本周周报。管理员只负责管理，无需填写周报。"
               : "管理员尚未开启本周填报，你目前可以查看全部周报，或修改自己的往期周报。"
           }
         />
       )}
 
       {selected && canEditOwn && (
-        <Card style={{ marginBottom: 16, background: "#f9f9ff", borderColor: "#c7d2fe" }}>
-          <Space style={{ width: "100%", justifyContent: "space-between" }}>
-            <span>
-              <Typography.Text strong>我的周报</Typography.Text>
+        <Card style={{ marginBottom: 16, background: "#f9f9ff", borderColor: "#c7d2fe" }} styles={{ body: { padding: 16 } }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: isMobile ? "column" : "row",
+              alignItems: isMobile ? "stretch" : "center",
+              justifyContent: "space-between",
+              gap: 12,
+            }}
+          >
+            <div>
+              <Typography.Text strong style={{ fontSize: 15 }}>
+                我的周报
+              </Typography.Text>
               {myRow?.report && (
-                <Typography.Text type="secondary" style={{ marginLeft: 8 }}>
-                  最近更新：{new Date(myRow.report.updated_at).toLocaleString()}
-                </Typography.Text>
+                <div>
+                  <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                    最近更新：{new Date(myRow.report.updated_at).toLocaleString()}
+                  </Typography.Text>
+                </div>
               )}
-            </span>
-            <Button type="primary" icon={<EditOutlined />} onClick={startEdit}>
+            </div>
+            <Button type="primary" size={isMobile ? "large" : "middle"} icon={<EditOutlined />} onClick={startEdit} block={isMobile}>
               {myRow?.report ? "编辑我的周报" : "填写本周周报"}
             </Button>
-          </Space>
+          </div>
         </Card>
       )}
 
@@ -193,19 +225,20 @@ export default function Reports() {
             <Card
               key={r.user_id}
               size="small"
+              styles={{ body: { padding: isMobile ? 14 : 16 } }}
               title={
-                <Space>
+                <Space wrap size={4}>
                   <Typography.Text strong>{r.display_name}</Typography.Text>
-                  <Typography.Text type="secondary">@{r.username}</Typography.Text>
+                  <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                    @{r.username}
+                  </Typography.Text>
                   {r.user_id === user?.id && <Tag color="blue">我</Tag>}
                 </Space>
               }
               extra={
                 user?.role === "admin" && r.report ? (
                   <Popconfirm title="删除该周报？图片也会一并删除" onConfirm={() => deleteReport(r.report!.id)}>
-                    <Button danger size="small" icon={<DeleteOutlined />}>
-                      删除
-                    </Button>
+                    <Button danger size="small" icon={<DeleteOutlined />} />
                   </Popconfirm>
                 ) : null
               }
@@ -224,7 +257,11 @@ export default function Reports() {
         confirmLoading={saving}
         okText="保存"
         cancelText="取消"
-        width={820}
+        width={isMobile ? "100vw" : 840}
+        style={isMobile ? { top: 0, maxWidth: "100vw", paddingBottom: 0 } : { top: 40 }}
+        wrapClassName={isMobile ? "editor-modal-mobile" : undefined}
+        okButtonProps={{ size: isMobile ? "large" : "middle" }}
+        cancelButtonProps={{ size: isMobile ? "large" : "middle" }}
         destroyOnClose
       >
         <RichTextEditor
