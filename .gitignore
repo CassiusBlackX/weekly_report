@@ -16,6 +16,8 @@ backend/frontend_dist/
 frontend/vite.config.js
 frontend/vite.config.d.ts
 *.tsbuildinfo
+dist/
+frontend/package-lock.json
 
 # Runtime data & backups
 backend/data/
