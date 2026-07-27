@@ -26,6 +26,14 @@ class UserOut(BaseModel):
     created_at: datetime
 
 
+class MeOut(UserOut):
+    # True when this request was authenticated via the Remote-User header
+    # (nginx/Authelia SSO gate) rather than this app's own session cookie.
+    # The frontend uses this to decide whether "log out" should end the
+    # real SSO session (Authelia) or just this app's local session.
+    is_sso: bool
+
+
 class UserCreateIn(BaseModel):
     username: str = Field(min_length=2, max_length=64, pattern=r"^[A-Za-z0-9_.-]+$")
     display_name: str = Field(min_length=1, max_length=128)

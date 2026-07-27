@@ -34,8 +34,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    const wasSso = user?.is_sso ?? false;
     await api.post("/auth/logout");
     setUser(null);
+    if (wasSso) {
+      // This app's own session cookie is irrelevant for an SSO user — the
+      // Remote-User header re-authenticates them on the very next request
+      // regardless of it. The only real "log out" is ending the Authelia
+      // session itself, which then makes nginx's auth_request bounce back
+      // to the actual unified login page instead of this app's own (which
+      // an SSO user's account can never log into: its password is random
+      // and never issued).
+      await fetch("/authelia/api/logout", { method: "POST", credentials: "include" });
+      window.location.href = "/weekly_report/";
+    }
   };
 
   return (

@@ -90,6 +90,15 @@ export default function Reports() {
 
   const myRow = rows.find((r) => r.user_id === user?.id);
 
+  // Members who've filled in this week's report float to the top; empty
+  // ones sink to the bottom — makes it obvious at a glance, in a meeting,
+  // who's left to present. Stable sort (guaranteed since ES2019) keeps
+  // the backend's original relative order within each group.
+  const sortedRows = useMemo(
+    () => [...rows].sort((a, b) => Number(!a.report) - Number(!b.report)),
+    [rows]
+  );
+
   const startEdit = () => {
     setDraftJson(myRow?.report?.content_json || "");
     setDraftHtml(myRow?.report?.content_html || "");
@@ -220,19 +229,31 @@ export default function Reports() {
       {rows.length === 0 && !loading ? (
         <Empty description="暂无数据" />
       ) : (
-        <Space direction="vertical" style={{ width: "100%" }} size={16}>
-          {rows.map((r) => (
+        <div
+          style={{
+            display: "grid",
+            // Two columns on desktop (side-by-side for projector viewing
+            // during group meetings), one column on mobile.
+            gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+            gap: 16,
+            alignItems: "start",
+          }}
+        >
+          {sortedRows.map((r) => (
             <Card
               key={r.user_id}
               size="small"
               styles={{ body: { padding: isMobile ? 14 : 16 } }}
               title={
-                <Space wrap size={4}>
-                  <Typography.Text strong>{r.display_name}</Typography.Text>
-                  <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                <Space wrap size={6}>
+                  <Typography.Text strong style={{ fontSize: 17 }}>
+                    {r.display_name}
+                  </Typography.Text>
+                  <Typography.Text type="secondary" style={{ fontSize: 13 }}>
                     @{r.username}
                   </Typography.Text>
                   {r.user_id === user?.id && <Tag color="blue">我</Tag>}
+                  {!r.report && <Tag>未填写</Tag>}
                 </Space>
               }
               extra={
@@ -246,7 +267,7 @@ export default function Reports() {
               <RichTextViewer html={r.report?.content_html || ""} />
             </Card>
           ))}
-        </Space>
+        </div>
       )}
 
       <Modal

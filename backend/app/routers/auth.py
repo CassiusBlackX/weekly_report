@@ -11,9 +11,9 @@ from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..database import get_db
-from ..deps import csrf_protect, get_current_user
+from ..deps import csrf_protect, get_current_user, is_sso_request
 from ..models import User, utcnow
-from ..schemas import ChangePasswordIn, LoginIn, UserOut
+from ..schemas import ChangePasswordIn, LoginIn, MeOut, UserOut
 from ..security import (
     CSRF_COOKIE,
     SESSION_COOKIE,
@@ -92,9 +92,9 @@ def logout(response: Response, _: None = Depends(csrf_protect), user: User = Dep
     return {"ok": True}
 
 
-@router.get("/me", response_model=UserOut)
-def me(user: User = Depends(get_current_user)):
-    return user
+@router.get("/me", response_model=MeOut)
+def me(user: User = Depends(get_current_user), sso: bool = Depends(is_sso_request)):
+    return MeOut(**UserOut.model_validate(user).model_dump(), is_sso=sso)
 
 
 @router.post("/change-password")

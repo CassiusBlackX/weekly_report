@@ -8,6 +8,7 @@ import {
   LogoutOutlined,
   KeyOutlined,
   MenuOutlined,
+  HomeOutlined,
 } from "@ant-design/icons";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import type { MenuProps } from "antd";
@@ -23,6 +24,7 @@ export default function AppLayout() {
   const screens = useBreakpoint();
   const isMobile = !screens.md; // < 768px
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const isAdminPage = location.pathname.startsWith("/admin");
 
   const items = [
     { key: "/", icon: <FileTextOutlined />, label: "周报" },
@@ -50,10 +52,31 @@ export default function AppLayout() {
     />
   );
 
-  const userMenuItems: MenuProps["items"] = [
-    { key: "pwd", icon: <KeyOutlined />, label: "修改密码", onClick: () => navigate("/change-password") },
-    { key: "out", icon: <LogoutOutlined />, label: "退出登录", onClick: () => logout().then(() => navigate("/login")) },
-  ];
+  // An SSO user's local password is a random value they never see (see
+  // backend deps.py) — this app's own change-password form can never
+  // succeed for them, so send them to the actual account portal instead.
+  const userMenuItems: MenuProps["items"] = user?.is_sso
+    ? [
+        {
+          key: "pwd",
+          icon: <KeyOutlined />,
+          label: "修改密码",
+          onClick: () => {
+            // Authelia's own built-in Change Password requires an emailed
+            // one-time code (unconditionally, for any account without
+            // TOTP/WebAuthn 2FA) — lab members' directory emails are
+            // placeholders, not real mailboxes, so that can never arrive.
+            // It's disabled server-side; this is our own replacement that
+            // just sets a new password directly, no email step.
+            window.location.href = "/account/";
+          },
+        },
+        { key: "out", icon: <LogoutOutlined />, label: "退出登录", onClick: () => logout() },
+      ]
+    : [
+        { key: "pwd", icon: <KeyOutlined />, label: "修改密码", onClick: () => navigate("/change-password") },
+        { key: "out", icon: <LogoutOutlined />, label: "退出登录", onClick: () => logout().then(() => navigate("/login")) },
+      ];
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -83,6 +106,29 @@ export default function AppLayout() {
           >
             {isMobile ? "周报系统" : "实验室周报系统"}
           </Typography.Title>
+          {!isAdminPage && (
+            <a
+              href="https://sdic.sjtu.edu.cn/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                color: "rgba(255,255,255,.85)",
+                fontSize: 12,
+                whiteSpace: "nowrap",
+                flex: "none",
+                marginLeft: 4,
+                padding: "2px 8px",
+                borderRadius: 999,
+                border: "1px solid rgba(255,255,255,.35)",
+              }}
+            >
+              <HomeOutlined />
+              {!isMobile && "实验室首页"}
+            </a>
+          )}
         </div>
         <Dropdown menu={{ items: userMenuItems }} trigger={["click"]}>
           <span style={{ color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", maxWidth: "55vw" }}>

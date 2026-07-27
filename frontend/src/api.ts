@@ -32,6 +32,9 @@ export interface User {
   role: "admin" | "user";
   is_active: boolean;
   created_at: string;
+  // True when this session came from the SSO gateway (Authelia) rather
+  // than this app's own login form.
+  is_sso: boolean;
 }
 
 export interface Cycle {

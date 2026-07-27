@@ -11,9 +11,11 @@ body {
   -webkit-text-size-adjust: 100%;
 }
 
-/* Shared styling for editor input and rendered report content. */
+/* Shared styling for editor input and rendered report content.
+   Bumped up from 16px so weekly reports stay legible projected on a
+   screen during group meetings, not just on a laptop up close. */
 .tiptap-content {
-  font-size: 16px; /* >=16px prevents iOS Safari from auto-zooming on focus */
+  font-size: 18px; /* >=16px prevents iOS Safari from auto-zooming on focus */
   line-height: 1.7;
   word-break: break-word;
 }
@@ -42,7 +44,7 @@ body {
 .tiptap-content .ProseMirror {
   outline: none;
   min-height: 180px;
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .tiptap-content .ProseMirror p.is-editor-empty:first-child::before {
