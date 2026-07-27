@@ -90,14 +90,22 @@ export default function Reports() {
 
   const myRow = rows.find((r) => r.user_id === user?.id);
 
-  // Members who've filled in this week's report float to the top; empty
-  // ones sink to the bottom — makes it obvious at a glance, in a meeting,
-  // who's left to present. Stable sort (guaranteed since ES2019) keeps
-  // the backend's original relative order within each group.
-  const sortedRows = useMemo(
-    () => [...rows].sort((a, b) => Number(!a.report) - Number(!b.report)),
-    [rows]
-  );
+  // Members who've filled in this week's report float to the top, longest
+  // first — makes it obvious at a glance, in a meeting, who's written the
+  // most and who's left to present. Empty ones sink to the bottom, in
+  // whatever order the backend returned them (stable sort, guaranteed
+  // since ES2019). Length is measured on plain text (HTML tags stripped),
+  // not raw markup, so formatting overhead doesn't skew the ranking.
+  const sortedRows = useMemo(() => {
+    const textLength = (html: string | undefined) => (html || "").replace(/<[^>]+>/g, "").trim().length;
+    return [...rows].sort((a, b) => {
+      const aFilled = !!a.report;
+      const bFilled = !!b.report;
+      if (aFilled !== bFilled) return aFilled ? -1 : 1;
+      if (!aFilled) return 0;
+      return textLength(b.report!.content_html) - textLength(a.report!.content_html);
+    });
+  }, [rows]);
 
   const startEdit = () => {
     setDraftJson(myRow?.report?.content_json || "");
@@ -231,18 +239,23 @@ export default function Reports() {
       ) : (
         <div
           style={{
-            display: "grid",
-            // Two columns on desktop (side-by-side for projector viewing
-            // during group meetings), one column on mobile.
-            gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
-            gap: 16,
-            alignItems: "start",
+            // CSS multi-column instead of a grid: a grid forces every card
+            // in the same row to the height of its tallest neighbor, which
+            // wastes a lot of space when reports vary wildly in length.
+            // Columns let each card be exactly as tall as its own content
+            // and pack top-to-bottom, so short and long reports interleave
+            // without leaving big empty gaps.
+            columnCount: isMobile ? 1 : 2,
+            columnGap: 16,
           }}
         >
           {sortedRows.map((r) => (
             <Card
               key={r.user_id}
               size="small"
+              // Keep each card whole instead of letting the column break
+              // slice it in half.
+              style={{ breakInside: "avoid", marginBottom: 16 }}
               styles={{ body: { padding: isMobile ? 14 : 16 } }}
               title={
                 <Space wrap size={6}>
@@ -253,7 +266,6 @@ export default function Reports() {
                     @{r.username}
                   </Typography.Text>
                   {r.user_id === user?.id && <Tag color="blue">我</Tag>}
-                  {!r.report && <Tag>未填写</Tag>}
                 </Space>
               }
               extra={
